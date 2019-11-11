@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2013 Garrett Brown
 # See Copyright Notice in rominfo.py
@@ -18,7 +18,6 @@ class TestGenesisParser(unittest.TestCase):
         self.assertEqual(len(empty), 0)
 
         props = self.genesisParser.parse("data/Sonic the Hedgehog.bin")
-        print "%s" % props
         self.assertEqual(len(props), 13)
         self.assertEqual(props["console"], "SEGA MEGA DRIVE")
         self.assertEqual(props["copyright"], "(C)SEGA 1991.APR")

@@ -6,7 +6,7 @@ import csv
 import struct
 import time
 import datetime
-from rominfo import RomInfoParser
+from .rominfo import RomInfoParser
 
 
 class DreamcastParser(RomInfoParser):
@@ -196,11 +196,11 @@ class DreamcastParser(RomInfoParser):
                 'publisher',
                 'game_title')
 
-        props = dict(zip(keys, ip_info))
+        props = dict(list(zip(keys, ip_info)))
         try:
             peripherals_code = int(props['compatible_peripherals_code'], 16)
             peripherals = []
-            for p_code, p_desc in dc_peripherals.items():
+            for p_code, p_desc in list(dc_peripherals.items()):
                 if peripherals_code & p_code == p_code:
                     peripherals.append(p_desc)
             props['compatible_peripherals'] = tuple(peripherals)
