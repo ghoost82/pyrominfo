@@ -18,7 +18,8 @@ class TestNintendo64Parser(unittest.TestCase):
         self.assertEqual(len(empty), 0)
 
         props = self.n64Parser.parse("data/Super Smash Bros.z64")
-        self.assertEqual(len(props), 9)
+        self.assertEqual(len(props), 10)
+        self.assertEqual(props["format"], "")
         self.assertEqual(props["title"], "SMASH BROTHERS")
         self.assertEqual(props["version"], "00001449")
         self.assertEqual(props["crc1"], "916B8B5B")

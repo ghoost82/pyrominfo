@@ -32,18 +32,20 @@ class Nintendo64Parser(RomInfoParser):
             if [b for b in data[:4]] == [0x80, 0x37, 0x12, 0x40]:
                 return True
             # Test if rom is a byteswapped .v64 image with header 0x37804012. [BADC]
-            if [b for b in data[:4]] == [0x37, 0x80, 0x40, 0x12]:
+            elif [b for b in data[:4]] == [0x37, 0x80, 0x40, 0x12]:
                 return True
             # Test if rom is a little endian .n64 image with header 0x40123780. [DCBA]
-            if [b for b in data[:4]] == [0x40, 0x12, 0x37, 0x80]:
+            elif [b for b in data[:4]] == [0x40, 0x12, 0x37, 0x80]:
                 return True
             # Test if rom is a wordswapped .n64 image with header 0x40123780. [CDAB]
-            if [b for b in data[:4]] == [0x12, 0x40, 0x80, 0x37]:
+            elif [b for b in data[:4]] == [0x12, 0x40, 0x80, 0x37]:
                 return True
         return False
 
     def parseBuffer(self, data):
         props = {}
+
+        props["format"] = n64_formats.get(data[0x00], "")
 
         self.makeNativeFormat(data)
 
@@ -79,6 +81,12 @@ class Nintendo64Parser(RomInfoParser):
 
 RomInfoParser.registerParser(Nintendo64Parser())
 
+n64_formats = {
+    0x12: "wordswapped",
+    0x37: "byteswapped",
+    0x40: "little endian",
+    0x80: "",
+}
 
 n64_regions = {
     0x00: "", # Demo games
