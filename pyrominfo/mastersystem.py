@@ -20,7 +20,7 @@ class MasterSystemParser(RomInfoParser):
         with open(filename, "rb") as f:
             data = bytearray(f.read())
             # First header check is at 0x1FF0, so we clearly need at least this much data
-            if len(data) >= 0x2000:
+            if self.isValidData(data):
                 props = self.parseBuffer(data)
         return props
 
@@ -147,13 +147,13 @@ RomInfoParser.registerParser(MasterSystemParser())
 
 
 mastersystem_romsize = {
-    0xa: "8 KB",
-    0xb: "16 KB",
-    0xc: "32 KB",
-    0xd: "48 KB",
-    0xe: "64 KB",
-    0xf: "128 KB",
-    0x0: "256 KB",
-    0x1: "512 KB",
-    0x2: "1024 KB",
+    0xa: "8KB",
+    0xb: "16KB",
+    0xc: "32KB",
+    0xd: "48KB",
+    0xe: "64KB",
+    0xf: "128KB",
+    0x0: "256KB",
+    0x1: "512KB",
+    0x2: "1024KB",
 }
