@@ -20,13 +20,13 @@ class GensisParser(RomInfoParser):
     """
 
     def getValidExtensions(self):
-        return ["smd", "gen", "32x", "md", "bin", "iso", "mdx"]
+        return ["smd", "gen", "32x", "md", "bin", "iso", "mdx", "68k", "sgd"]
 
     def parse(self, filename):
         props = {}
         with open(filename, "rb") as f:
             data = bytearray(f.read())
-            if len(data):
+            if self.isValidData(data):
                 props = self.parseBuffer(data)
         return props
 
@@ -36,6 +36,7 @@ class GensisParser(RomInfoParser):
         of origin) or the presence of an SMD header.
         """
         if data[0x100 : 0x100 + 15] == b"SEGA MEGA DRIVE" or \
+           data[0x100 : 0x100 + 15] == b"SEGA_MEGA_DRIVE" or \
            data[0x100 : 0x100 + 12] == b"SEGA GENESIS":
             return True
         if self.hasSMDHeader(data) or self.isInterleaved(data):
@@ -52,8 +53,12 @@ class GensisParser(RomInfoParser):
         if self.hasSMDHeader(data):
             data = data[0x200 : ]
             self.deinterleaveSMD(data)
+            props["format"] = "Super Magic Drive interleaved"
         elif self.isInterleaved(data):
             self.deinterleaveMD(data)
+            props["format"] = "Multi Game Doctor interleaved"
+        else:
+            props["format"] = ""
 
         # 0100-010f - Console name, can be "SEGA MEGA DRIVE" or "SEGA GENESIS"
         #             depending on the console's country of origin.
