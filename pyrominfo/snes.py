@@ -18,7 +18,7 @@ from .rominfo import RomInfoParser
 
 class SNESParser(RomInfoParser):
     """
-    Parse a SNES image. Valid extensions are smc, swc, fig.
+    Parse a SNES image. Valid extensions are smc, swc, fig, sfc.
     SNES header references and related source code:
     * http://romhack.wikia.com/wiki/SNES_header
     * http://softpixel.com/~cwright/sianse/docs/Snesrom.txt
@@ -38,7 +38,7 @@ class SNESParser(RomInfoParser):
     FORMAT_BIGFIRST = 1
 
     def getValidExtensions(self):
-        return ["smc", "swc", "fig"]
+        return ["smc", "swc", "fig", "sfc"]
 
     def parse(self, filename):
         props = {}
@@ -62,7 +62,12 @@ class SNESParser(RomInfoParser):
 
         while True:
             # Check for a header (512 bytes), and skip it if found
-            data = romdata[512:] if self.hasSMCHeader(romdata) else romdata[:]
+            if self.hasSMCHeader(romdata):
+                data = romdata[512:]
+                props["header"] = "yes"
+            else:
+                data = romdata[:]
+                props["header"] = ""
 
             (hiScore, loScore, extendedFormat, headerOffsetRef) = self.findHiLoMode(data, forceInterleavedOff)
 
