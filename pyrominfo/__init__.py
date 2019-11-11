@@ -5,6 +5,7 @@ from .rominfo import RomInfoParser
 
 __all__ = [
     "RomInfo",
+    "dreamcast",
     "gameboy",
     "gba",
     "genesis",
