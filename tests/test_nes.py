@@ -18,7 +18,8 @@ class TestNESParser(unittest.TestCase):
         self.assertEqual(len(empty), 0)
 
         props = self.nesParser.parse("data/Metroid.nes")
-        self.assertEqual(len(props), 12)
+        self.assertEqual(len(props), 13)
+        self.assertEqual(props["platform"], "Nintendo Entertainment System")
         self.assertEqual(props["prg_size"], "128KB")
         self.assertEqual(props["chr_size"], "0KB")
         self.assertEqual(props["mirroring"], "horizontal")
@@ -33,7 +34,8 @@ class TestNESParser(unittest.TestCase):
         self.assertEqual(props["video_output"], "")
 
         props = self.nesParser.parse("data/Dancing Blocks (1990)(Sachen)(AS)[p][!][SA-013][NES cart].unf")
-        self.assertEqual(len(props), 10)
+        self.assertEqual(len(props), 11)
+        self.assertEqual(props["platform"], "Nintendo Entertainment System")
         self.assertEqual(props["header"], "UNIF")
         self.assertEqual(props["prg_size"], "32KB")
         self.assertEqual(props["chr_size"], "8KB")

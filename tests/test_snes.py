@@ -18,7 +18,8 @@ class TestSNESParser(unittest.TestCase):
         self.assertEqual(len(empty), 0)
 
         props = self.snesParser.parse("data/Super Mario World.smc")
-        self.assertEqual(len(props), 15)
+        self.assertEqual(len(props), 16)
+        self.assertEqual(props["platform"], "Super Nintendo Entertainment System")
         self.assertEqual(props["header"], "")
         self.assertEqual(props["title"], "SUPER MARIOWORLD")
         self.assertEqual(props["code"], "")

@@ -41,6 +41,8 @@ class NESParser(RomInfoParser):
     def parseBuffer(self, data):
         props = {}
 
+        props["platform"] = "Nintendo Entertainment System"
+
         if data[:4] == b"NES\x1a":
             # 04 - PRG ROM size
             props["prg_size"] = "%dKB" % (data[0x04] * 16)

@@ -18,7 +18,8 @@ class TestGenesisParser(unittest.TestCase):
         self.assertEqual(len(empty), 0)
 
         props = self.genesisParser.parse("data/Sonic the Hedgehog.bin")
-        self.assertEqual(len(props), 14)
+        self.assertEqual(len(props), 15)
+        self.assertEqual(props["platform"], "Mega Drive")
         self.assertEqual(props["format"], "")
         self.assertEqual(props["console"], "SEGA MEGA DRIVE")
         self.assertEqual(props["copyright"], "(C)SEGA 1991.APR")

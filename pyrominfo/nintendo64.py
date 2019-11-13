@@ -45,6 +45,8 @@ class Nintendo64Parser(RomInfoParser):
     def parseBuffer(self, data):
         props = {}
 
+        props["platform"] = "Nintendo 64"
+
         props["format"] = n64_formats.get(data[0x00], "")
 
         self.makeNativeFormat(data)

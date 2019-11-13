@@ -49,6 +49,8 @@ class GensisParser(RomInfoParser):
         # TODO: If extension is .mdx, decode image
         #data = [b ^ 0x40 for b in data[4 : -1]] # len(data) decreases by 5
 
+        props["platform"] = "Mega Drive"
+
         # Auto-detect SMD/MD interleaving
         if self.hasSMDHeader(data):
             data = data[0x200 : ]

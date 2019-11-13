@@ -197,6 +197,9 @@ class DreamcastParser(RomInfoParser):
                 'game_title')
 
         props = dict(list(zip(keys, ip_info)))
+
+        props['platform'] = 'Dreamcast'
+
         try:
             peripherals_code = int(props['compatible_peripherals_code'], 16)
             peripherals = []

@@ -88,7 +88,7 @@ class MasterSystemParser(RomInfoParser):
 
         # 7FFF.8 - Region and system for which the cartridge is intended
         r = (header[0x0f] >> 4)
-        props["console"] = "Sega Master System" if r in [3, 4] else "Game Gear" if r in [5, 6, 7] else ""
+        props["platform"] = "Master System" if r in [3, 4] else "Game Gear" if r in [5, 6, 7] else ""
         props["region"] = "Japan" if r in [3, 5] else "Export" if r in [4, 6] else "International" if r == 7 else ""
 
         # 7FFF.8 - ROM size. Final 4 bits give the ROM size, some values are buggy.

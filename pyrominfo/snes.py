@@ -60,6 +60,8 @@ class SNESParser(RomInfoParser):
         props = {}
         forceInterleavedOff = False
 
+        props["platform"] = "Super Nintendo Entertainment System"
+
         while True:
             # Check for a header (512 bytes), and skip it if found
             if self.hasSMCHeader(romdata):
