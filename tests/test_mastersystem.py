@@ -18,7 +18,7 @@ class TestMasterSystemParser(unittest.TestCase):
         self.assertEqual(len(empty), 0)
 
         props = self.mastersystemParser.parse("data/Air Rescue.sms")
-        self.assertEqual(len(props), 13)
+        self.assertEqual(len(props), 14)
         self.assertEqual(props["header_id"], "TMR SEGA")
         self.assertEqual(props["reserved_word"], "")
         self.assertEqual(props["checksum"], "F90A")
@@ -28,6 +28,7 @@ class TestMasterSystemParser(unittest.TestCase):
         self.assertEqual(props["platform"], "Master System")
         self.assertEqual(props["region"], "Export")
         self.assertEqual(props["rom_size"], "256KB")
+        self.assertEqual(props["rom_size_bytes"], 262144)
         self.assertEqual(props["date"], "")
         self.assertEqual(props["author"], "")
         self.assertEqual(props["title"], "")
@@ -35,7 +36,7 @@ class TestMasterSystemParser(unittest.TestCase):
 
     def test_gameGear(self):
         props = self.mastersystemParser.parse("data/Tails Adventures.gg")
-        self.assertEqual(len(props), 13)
+        self.assertEqual(len(props), 14)
         self.assertEqual(props["header_id"], "TMR SEGA")
         self.assertEqual(props["reserved_word"], "")
         self.assertEqual(props["checksum"], "0000")
@@ -45,6 +46,7 @@ class TestMasterSystemParser(unittest.TestCase):
         self.assertEqual(props["platform"], "Game Gear")
         self.assertEqual(props["region"], "Export")
         self.assertEqual(props["rom_size"], "256KB")
+        self.assertEqual(props["rom_size_bytes"], 262144)
         self.assertEqual(props["date"], "")
         self.assertEqual(props["author"], "")
         self.assertEqual(props["title"], "")

@@ -66,10 +66,10 @@ class GameboyParser(RomInfoParser):
         # 0146 - SGB Flag, specifies whether the game supports SGB functions, common values are:
         #   00h: No SGB functions (Normal Gameboy or CGB only game)
         #   03h: Game supports SGB functions
-        if data[0x143] & 0x80:
+        if data[0x143] == 0x80:
             props["platform"] = "Game Boy Color"
-        elif data[0x146] == 0x03:
-            props["platform"] = "Super Game Boy"
+        elif data[0x143] == 0xc0:
+            props["platform"] = "Game Boy Color Only"
         else:
             props["platform"] = "Game Boy"
         props["sgb_support"] = "yes" if data[0x146] == 0x03 else ""
@@ -89,11 +89,13 @@ class GameboyParser(RomInfoParser):
         props["cartridge_type_code"] = "%02X" % data[0x147]
 
         # 0148 - ROM size of the cartridge
-        props["rom_size"] = gameboy_rom_sizes.get(data[0x148], "")
+        props["rom_size"] = gameboy_rom_sizes.get(data[0x148], "")[0]
+        props["rom_size_bytes"] = gameboy_rom_sizes.get(data[0x148], "")[1]
         props["rom_size_code"] = "%02X" % data[0x148]
 
         # 0149 - Size of the external RAM in the cartridge (if any)
-        props["ram_size"] = gameboy_ram_sizes.get(data[0x149], "")
+        props["ram_size"] = gameboy_ram_sizes.get(data[0x149], "")[0]
+        props["ram_size_bytes"] = gameboy_ram_sizes.get(data[0x149], "")[1]
         props["ram_size_code"] = "%02X" % data[0x149]
 
         # 014A - Destination code, if this version of the game is supposed to be sold in Japan.
@@ -145,23 +147,23 @@ gameboy_types = {
 }
 
 gameboy_rom_sizes = {
-    0: "32KB",
-    1: "64KB",
-    2: "128KB",
-    3: "256KB",
-    4: "512KB",
-    5: "1MB",
-    6: "2MB",
-    7: "4MB",
+    0: ["32KB", 32768],
+    1: ["64KB", 65536],
+    2: ["128KB", 131072],
+    3: ["256KB", 262144],
+    4: ["512KB", 524288],
+    5: ["1MB", 1048576],
+    6: ["2MB", 2097152],
+    7: ["4MB", 4194304],
 }
 
 gameboy_ram_sizes = {
-    0: "0KB",
-    1: "2KB",
-    2: "8KB",
-    3: "32KB",
-    4: "128KB",
-    5: "64KB"
+    0: ["0KB", 0],
+    1: ["2KB", 2048],
+    2: ["8KB", 8192],
+    3: ["32KB", 32768],
+    4: ["128KB", 131072],
+    5: ["64KB", 65536],
 }
 
 gameboy_publishers = {

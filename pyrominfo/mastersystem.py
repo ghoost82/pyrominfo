@@ -95,7 +95,8 @@ class MasterSystemParser(RomInfoParser):
         #          It is common for this value to be present even when the checksum is not.
         #          It is also common for it to indicate a ROM size smaller than the actual ROM
         #          size, perhaps to speed up the boot process by speeding up the checksum validation.
-        props["rom_size"] = mastersystem_romsize.get(header[0x0f] & 0x0f, "")
+        props["rom_size"] = mastersystem_romsize.get(header[0x0f] & 0x0f, "")[0]
+        props["rom_size_bytes"] = mastersystem_romsize.get(header[0x0f] & 0x0f, "")[1]
 
         # SDSC (homebrew) header. See isValidData()
         if data[0x7fe0 : 0x7fe0 + 4] == b"SDSC" and len(data) > 0x7fe0 + 0x10:
@@ -147,13 +148,13 @@ RomInfoParser.registerParser(MasterSystemParser())
 
 
 mastersystem_romsize = {
-    0xa: "8KB",
-    0xb: "16KB",
-    0xc: "32KB",
-    0xd: "48KB",
-    0xe: "64KB",
-    0xf: "128KB",
-    0x0: "256KB",
-    0x1: "512KB",
-    0x2: "1024KB",
+    0xa: ["8KB", 8192],
+    0xb: ["16KB", 16384],
+    0xc: ["32KB", 32768],
+    0xd: ["48KB", 49152],
+    0xe: ["64KB", 65536],
+    0xf: ["128KB", 131072],
+    0x0: ["256KB", 262144],
+    0x1: ["512KB", 524288],
+    0x2: ["1MB", 1048576],
 }

@@ -163,10 +163,12 @@ class SNESParser(RomInfoParser):
 
             # 017 - ROM size: 1 << (ROM_SIZE - 7) Mbits, range is 8..12 (256KB..4MB, 2Mb..32Mb)
             b = header[0x27]
-            props["rom_size"] = "%d Mbit" % (1 << (b - 7)) if (8 <= b and b <= 12) else ""
+            props["rom_size"] = "%dMbit" % (1 << (b - 7)) if (8 <= b and b <= 12) else ""
+            props["rom_size_bytes"] = 1 << (b + 10) if (8 <= b and b <= 12) else 0
 
             # 018 - RAM size: 1 << (3 + SRAM_BYTE) Kbits, range is 0..5 (0..32 kilobytes, 0..256 kbit)
-            props["ram_size"] = "%d Kbit" % (1 << (3 + header[0x28])) if header[0x28] <= 5 else ""
+            props["ram_size"] = "%dKbit" % (1 << (3 + header[0x28])) if header[0x28] <= 5 else ""
+            props["ram_size_bytes"] = 1 << (10 + header[0x28]) if header[0x28] <= 5 else 0
 
             # 019 - Country code, video region
             props["region"] = snes_regions.get(header[0x29], "")
