@@ -13,6 +13,7 @@ __all__ = [
     "nes",
     "nintendo64",
     "snes",
+    "genericdisc",
 ]
 
 class RomInfo(object):
