@@ -5,10 +5,14 @@ from .rominfo import RomInfoParser
 
 class NESParser(RomInfoParser):
     """
-    Parse a NES image. Valid extensions are nes, nez, unf, unif.
+    Parse a NES image. Valid extensions are nes, nez, unf, unif fds, qd.
     NES file format documentation and related source code:
     * http://nesdev.com/neshdr20.txt
-    * http://wiki.nesdev.com/w/index.php/INES
+    * https://wiki.nesdev.com/w/index.php/INES
+    * https://wiki.nesdev.com/w/index.php/NES_2.0
+    * https://wiki.nesdev.com/w/index.php/UNIF
+    * https://wiki.nesdev.com/w/index.php/FDS_disk_format
+    * https://wiki.nesdev.com/w/index.php/FDS_file_format
     * http://codef00.com/unif_cur.txt
     * nes_slot.c of the MAME project:
     * http://git.redump.net/mame/tree/src/mess/machine/nes_slot.c
@@ -16,13 +20,13 @@ class NESParser(RomInfoParser):
     """
 
     def getValidExtensions(self):
-        return ["nes", "nez", "unf", "unif"]
+        return ["nes", "nez", "unf", "unif", "fds", "qd"]
 
     def parse(self, filename):
         props = {}
         with open(filename, "rb") as f:
             ext = self._getExtension(filename)
-            if ext in ["unf", "unif"]:
+            if ext in ["unf", "unif", "fds", "qd"]:
                 data = bytearray(f.read())
             else:
                 data = bytearray(f.read(16))
@@ -33,22 +37,29 @@ class NESParser(RomInfoParser):
     def isValidData(self, data):
         """
         Test for a valid NES image by checking the first 4 bytes for a UNIF or
-        iNES header ("NES" followed by MS-DOS end-of-file). FDS headers
-        ("FDS\x1a") are not supported, as they contain no useful information.
+        iNES header ("NES" followed by MS-DOS end-of-file).
         """
-        return data[:4] == b"NES\x1a" or data[:4] == b"UNIF"
+        return data[:4] == b"NES\x1a" or \
+               data[:4] == b"UNIF" or \
+               data[:4] == b"FDS\x1a" or \
+               data[1:15] == b"*NINTENDO-HVC*"
 
     def parseBuffer(self, data):
         props = {}
 
-        props["platform"] = "Nintendo Entertainment System"
-
         if data[:4] == b"NES\x1a":
+            if len(data) < 16:
+                return props
+
+            props["platform"] = "Nintendo Entertainment System"
+
             # 04 - PRG ROM size
             props["prg_size"] = "%dKB" % (data[0x04] * 16)
+            props["prg_size_bytes"] = data[0x04] * 16 * 1024
 
             # 05 - CHR ROM size
             props["chr_size"] = "%dKB" % (data[0x05] * 8)
+            props["chr_size_bytes"] = data[0x05] * 8 * 1024
             
             # 06 - First ROM option byte
             # 76543210
@@ -56,7 +67,7 @@ class NESParser(RomInfoParser):
             # ||||||+-- 1: Cartridge contains battery
             # |||||+--- 1: ROM contains trainer
             # ||||+---- 1: ROM provide four-screen VRAM
-            # ++++----- Lower nybble of mapper number
+            # ++++----- Mapper Number D0..D3
             props["mirroring"] = "vertical" if data[0x06] & 0x01 else "horizontal"
             props["battery"] = "yes" if data[0x06] & 0x02 else ""
             props["trainer"] = "yes" if data[0x06] & 0x04 else ""
@@ -64,19 +75,33 @@ class NESParser(RomInfoParser):
 
             # 07 - Second ROM option byte
             # 76543210
-            # |||||||+- VS System
-            # ||||||+-- PlayChoice-10
+            # ||||||++- Console type: VS System, PlayChoice-10, extended
             # ||||++--- If equal to 2, flags 8-15 are in NES 2.0 format
-            # ++++----- Upper nybble of mapper number
-            props["vs_system"] = "yes" if data[0x07] & 0x01 else ""
-            props["playchoice_10"] = "yes" if data[0x07] & 0x02 else ""
-            ines2 = (data[0x07] & 0x0c == 0x8)
-            props["header"] = "NES 2.0" if ines2 else "iNES"
-            #props["mapper_id"] = (data[0x07] & 0xf0) + (data[0x06] >> 4)
-            mapper = (data[0x07] & 0xf0) + (data[0x06] >> 4)
-            props["mapper"] = ines_mappers.get(mapper, "")
-            props["mapper_code"] = ("%03d" % mapper) if mapper != -1 else ""
+            # ++++----- Mapper Number D4..D7
+            if data[0x07] & 0x03:
+                props["console_type"] = "Extended"
+            elif data[0x07] & 0x02:
+                props["console_type"] = "Playchoice 10"
+            elif data[0x07] & 0x1:
+                props["console_type"] = "Vs. System"
+            else:
+                props["console_type"] = ""
+            nes2 = (data[0x07] & 0x0c == 0x8)
 
+            # 08 -  Mapper MSB/Submapper
+            # 76543210
+            # ||||++++- Mapper number D8..D11
+            # ++++----- Submapper number
+            props["header"] = "NES 2.0" if nes2 else "iNES"
+            if nes2:
+                mapper = (data[0x07] & 0xf0) + (data[0x06] >> 4) + (data[0x08] & 0x0f << 8)
+                submapper = (data[0x08] >> 4)
+            else:
+                mapper = (data[0x07] & 0xf0) + (data[0x06] >> 4) 
+                submapper = ""
+            props["mapper_code"] = ("%03d" % mapper) if mapper != -1 else ""
+            props["mapper"] = ines_mappers.get(mapper, "")
+            props["submapper_code"] = ("%03d" % submapper) if submapper != "" else ""
 
             # 0C - iNES 2.0 headers can specify TV system. If the second bit is set
             #      (data[0x0c] & 0x2) then the ROM works with both PAL and NTSC machines.
@@ -86,17 +111,21 @@ class NESParser(RomInfoParser):
             #     (E), (F), (G), (I), (Europe), (Australia), (France), (Germany),
             #     (Sweden), (En, Fr, De), (Italy)
             # See https://github.com/libretro/fceu-next/blob/master/src-fceux/ines.cpp
-            props["video_output"] = ("PAL" if data[0x0c] & 0x1 else "NTSC") if ines2 else ""
+            props["video_output"] = ("PAL" if data[0x0c] & 0x1 else "NTSC") if nes2 else ""
+
+            props["rom_size_bytes"] = props["prg_size_bytes"] + props["chr_size_bytes"]
 
         elif data[:4] == b"UNIF":
+            props["platform"] = "Nintendo Entertainment System"
             props["header"] = "UNIF"
 
             # Set defaults to be overridden in our chunked reads later
             props["prg_size"] = ""
             props["chr_size"] = ""
+            props["prg_size_bytes"] = 0
+            props["chr_size_bytes"] = 0
             props["mirroring"] = ""
             props["battery"] = ""
-            props["trainer"] = ""
             props["four_screen_vram"] = ""
             props["mapper"] = ""
             props["video_output"] = ""
@@ -119,9 +148,11 @@ class NESParser(RomInfoParser):
                 if ID == "MAPR":
                     props["mapper"] = self._sanitize(chunk)
                 elif ID == "PRG0":
-                    props["prg_size"] = "%dKB" % (len(chunk) / 1024)
+                    props["prg_size_bytes"] = len(chunk)
+                    props["prg_size"] = "%dKB" % (props["prg_size_bytes"] / 1024)
                 elif ID == "CHR0":
-                    props["chr_size"] = "%dKB" % (len(chunk) / 1024)
+                    props["chr_size_bytes"] = len(chunk)
+                    props["chr_size"] = "%dKB" % (props["chr_size_bytes"] / 1024)
                 elif ID == "NAME":
                     props["title"] = self._sanitize(chunk)
                 elif ID == "TVCI":
@@ -136,7 +167,50 @@ class NESParser(RomInfoParser):
                     elif chunk[0] == 0x04:
                         props["four_screen_vram"] = "yes"
 
+            props["rom_size_bytes"] = props["prg_size_bytes"] + props["chr_size_bytes"]
+
+        elif data[:4] == b"FDS\x1a" or \
+             data[:15] == b"\x01*NINTENDO-HVC*":
+
+            if len(data) < 62:
+                return props
+
+            props["platform"] = "Familiy Computer Disk System"
+            if data[:4] == b"FDS\x1a":
+                props["header"] = "FDS"
+                props["disk_sides"] = data[0x04]
+                data = data[0x10 : ]
+            else:
+                props["header"] = ""
+                if len(data) % 65500 == 0:
+                    props["disk_sides"] = "%d" % (len(data) / 65500)
+                    props["format"] = "FDS"
+                elif len(data) % 65536 == 0:
+                    props["disk_sides"] = "%d" % (len(data) / 65536)
+                    props["format"] = "QD"
+                else:
+                    props["disk_sides"] = ""
+            props["manufactor_code"] = data[0x0f]
+            props["manufactor"] = fds_manufactors.get(props["manufactor_code"], "")
+            props["game_name"] = self._sanitize(data[0x10 : 0x10 + 3])
+            props["game_type"] = self._sanitize(data[0x13 : 0x13 + 1])
+            props["revision"] = data[0x14]
+            props["disk_type"] = "FMC" if data[0x17] == 0x00 else "FSC" if data[0x17] == 0x01 else ""
+            props["manufactor_date"] = "%04d-%02X-%02X" % (1925 + self.bcdToInt(data[0x1f]), data[0x20], data[0x21])
+            props["rewrite_date"] = "%04d-%02X-%02X" % (1925 + self.bcdToInt(data[0x2c]), data[0x2d], data[0x2e]) if data[0x2c] != 0x00 and data[0x2c] != 0xff else ""
+            props["country"] = "Japan" if data[0x22] == 0x49 else data[0x22]
+
         return props
+
+    def bcdToInt(self, data):
+        """
+        Convert a BCD byte into a integer
+        """
+        result = 0
+        if data >> 4 <= 9:
+            result = (data >> 4) * 10
+            result += data & 0x0f
+        return result
 
 RomInfoParser.registerParser(NESParser())
 
@@ -294,4 +368,48 @@ ines_mappers = {
     246: "FONG SHEN BANG",
     252: "SAN GUO ZHI PIRATE",
     253: "DRAGON BALL PIRATE",
+}
+
+fds_manufactors = {
+    0x00: "Unlicensed",
+    0x01: "Nintendo",
+    0x08: "Capcom",
+    0x0a: "Jaleco",
+    0x18: "Hudson Soft",
+    0x49: "Irem",
+    0x4a: "Gakken",
+    0x8b: "BulletProof Software (BPS)",
+    0x99: "Pack-In-Video",
+    0x9b: "Tecmo",
+    0x9c: "Imagineer",
+    0xa2: "Scorpion Soft",
+    0xa4: "Konami",
+    0xa6: "Kawada Co., Ltd.",
+    0xa7: "Takara",
+    0xa8: "Royal Industries",
+    0xac: "Toei Animation",
+    0xaf: "Namco",
+    0xb1: "ASCII Corporation",
+    0xb2: "Bandai",
+    0xb3: "Soft Pro Inc.",
+    0xb6: "HAL Laboratory",
+    0xbb: "Sunsoft",
+    0xbc: "Toshiba EMI",
+    0xc0: "Taito",
+    0xc1: "Sunsoft / Ask Co., Ltd.",
+    0xc2: "Kemco",
+    0xc3: "Square",
+    0xc4: "Tokuma Shoten",
+    0xc5: "Data East",
+    0xc6: "Tonkin House/Tokyo Shoseki",
+    0xc7: "East Cube",
+    0xca: "Konami / Ultra / Palcom",
+    0xcb: "NTVIC / VAP",
+    0xcc: "Use Co., Ltd.",
+    0xce: "Pony Canyon / FCI",
+    0xd1: "Sofel",
+    0xd2: "Bothtec, Inc.",
+    0xdb: "Hiro Co., Ltd.",
+    0xe7: "Athena",
+    0xeb: "Atlus",
 }
