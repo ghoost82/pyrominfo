@@ -5,7 +5,7 @@ from .rominfo import RomInfoParser
 
 class GensisParser(RomInfoParser):
     """
-    Parse a Sega Gensis image. Valid extensions are smd, gen, 32x, md, bin, iso, mdx.
+    Parse a Sega Gensis image. Valid extensions are smd, gen, 32x, md, bin, iso, mdx, 68k, sgd, cue.
     Sega Gensis header references and related source code:
     * http://www.zophar.net/fileuploads/2/10614uauyw/Genesis_ROM_Format.txt
     * http://en.wikibooks.org/wiki/Genesis_Programming
@@ -17,17 +17,36 @@ class GensisParser(RomInfoParser):
     * http://gens.cvs.sourceforge.net/viewvc/gens/Gens-MultiPlatform/linux/src/gens/util/file/rom.c?view=markup
     * md_slot.c of the MAME project:
     * http://git.redump.net/mame/tree/src/mess/machine/md_slot.c
+    * https://www.retrodev.com/segacd.html
+    * http://devster.monkeeh.com/sega/32xguide1.txt
+    * https://plutiedev.com/rom-header
     """
 
     def getValidExtensions(self):
-        return ["smd", "gen", "32x", "md", "bin", "iso", "mdx", "68k", "sgd"]
+        return ["smd", "gen", "32x", "md", "bin", "iso", "mdx", "68k", "sgd", "cue"]
 
     def parse(self, filename):
         props = {}
+
+        tracks = self._getDiscTracks(filename)
+
+        if tracks:
+            filename = tracks[0]["filename"]
+
         with open(filename, "rb") as f:
-            data = bytearray(f.read())
+            # only read first 17 sectors for disc images and convert it if neccessary
+            if tracks:
+                data = bytearray(f.read(17 * 2352))
+                if tracks[0]["sector_size"] != 2048:
+                    data = self._convertRawToUser(data, tracks[0]["sector_size"], tracks[0]["mode"])
+            else:
+                data = bytearray(f.read())
+
             if self.isValidData(data):
                 props = self.parseBuffer(data)
+                if tracks != None:
+                    props["tracks"] = tracks
+
         return props
 
     def isValidData(self, data):
@@ -37,7 +56,9 @@ class GensisParser(RomInfoParser):
         """
         if data[0x100 : 0x100 + 15] == b"SEGA MEGA DRIVE" or \
            data[0x100 : 0x100 + 15] == b"SEGA_MEGA_DRIVE" or \
-           data[0x100 : 0x100 + 12] == b"SEGA GENESIS":
+           data[0x100 : 0x100 + 12] == b"SEGA GENESIS" or \
+           data[0x100 : 0x100 + 8] == b"SEGA 32X" or \
+           data[0x100 : 0x100 + 9] == b"SEGA PICO":
             return True
         if self.hasSMDHeader(data) or self.isInterleaved(data):
             return True
@@ -59,6 +80,10 @@ class GensisParser(RomInfoParser):
         elif self.isInterleaved(data):
             self.deinterleaveMD(data)
             props["format"] = "Multi Game Doctor interleaved"
+        elif data[0x0 : 0x0 + 8] == b"SEGADISC" or \
+             data[0x0 : 0x0 + 12] == b"SEGABOOTDISC" or \
+             data[0x0 : 0x0 + 12] == b"SEGADATADISC":
+            props["format"] = "Sega CD"
         else:
             props["format"] = ""
 
@@ -80,7 +105,7 @@ class GensisParser(RomInfoParser):
 
         # 0180-0181 - Type of product. Known values: GM = Game,  AL = Education
         #             en.wikibooks.org uses AL, Genesis_ROM_Format.txt Uses Al, loadrom.c uses AI...
-        props["classification"] = "Game" if data[0x180 : 0x180 + 2] == b"GM" else ("Education (%s)" % data[0x180 : 0x180 + 2])
+        props["classification"] = "Game" if data[0x180 : 0x180 + 2] == b"GM" else ("Education (%s)" % data[0x180 : 0x180 + 2].decode("ascii", "ignore"))
 
         # 0183-018A - Product code (type was followed by a space)
         props["code"] = self._sanitize(data[0x183 : 0x183 + 8])
@@ -92,9 +117,17 @@ class GensisParser(RomInfoParser):
         props["checksum"] = "%04X" % (data[0x18e] << 8 | data[0x18f])
 
         # 0190-019F - I/O device support
-        props["device_codes"] = self._sanitize(data[0x190 : 0x190 + 16])
-        props["devices"] = ", ".join([genesis_devices.get(d) for d in props["device_codes"] \
+        props["device_code"] = self._sanitize(data[0x190 : 0x190 + 16])
+        props["devices"] = ", ".join([genesis_devices.get(d) for d in props["device_code"] \
                                                              if d in genesis_devices])
+        # 01BC-01C7 - Modem Support
+        if data[0x1bc : 0x1bc + 2] == b"MO":
+            props["modem"] = "yes"
+            props["modem_code"] = self._sanitize(data[0x1bc : 0x1bc + 12]) 
+            props["modem_publisher"] = self.getPublisher(props["modem_code"], 2)
+            props["mode_game_number"] = self._sanitize(data[0x1c2 : 0x1c2 + 2])
+            props["mode_version"] = self._sanitize(data[0x1c5 : 0x1c5 + 1])
+            props["mode_region"] = genesis_modem_supports.get(self._sanitize(data[0x1c6 : 0x1c6 + 2]), "")
 
         # 01C8-01EF - Memo
         props["memo"] = self._sanitize(data[0x1c8 : 0x1c8 + 40])
@@ -103,7 +136,15 @@ class GensisParser(RomInfoParser):
         #             can contain up to three countries. According to
         #             http://www.squish.net/generator/manual.html, it may also be a
         #             single hex digit which represents a new-style country code.
-        props["country_codes"] = self._sanitize(data[0x1f0 : 0x1f0 + 16])
+        props["region_code"] = self._sanitize(data[0x1f0 : 0x1f0 + 16])
+        props["region"] = ", ".join([sega_regions.get(d) for d in props["region_code"] \
+                                                             if d in sega_regions])
+        if props["region_code"] != "" and props["region"] == "":
+            region = []
+            for r_code, r_desc in list(sega_regions.items()):
+                if type(r_code) != str and int(props["region_code"], 16) & r_code == r_code:
+                    region.append(r_desc)
+            props["region"] = ", ".join(region)
 
         return props
 
@@ -198,14 +239,14 @@ class GensisParser(RomInfoParser):
 
         return any(data[case[0] : case[0] + len(case[1])] == case[1] for case in edge_cases)
 
-    def getPublisher(self, copyright_str):
+    def getPublisher(self, copyright_str, start=3):
         """
         Resolve a copyright string into a publisher name. It SHOULD be 4
         characters after a (C) symbol, but there are variations. When the
         company uses a number as a company code, the copyright usually has
         this format: '(C)T-XX 1988.JUL', where XX is the company code.
         """
-        company = copyright_str[3:7]
+        company = copyright_str[start : start + 4]
         if "-" in company:
             company = company[company.rindex("-") + 1 : ]
         company = company.rstrip()
@@ -213,6 +254,17 @@ class GensisParser(RomInfoParser):
 
 RomInfoParser.registerParser(GensisParser())
 
+
+sega_regions = {
+    "J": "Asia",     # Japan, Korea, Asian NTSC
+    "U": "America",  # North American NTSC, Brazilian PAL-M, Argentine PAL-N
+    "E": "Europe",   # European PAL
+    0b0001: "Domestic, NTSC (Japan)",
+    0b0010: "Domestic, PAL",
+    0b0100: "Overseas, NTSC (America)",
+    0b1000: "Overseas, PAL (Europe)",
+
+}
 
 genesis_devices = {
     "J": "3B Joypad",
@@ -222,7 +274,7 @@ genesis_devices = {
     "B": "Control Ball",
     "F": "Floppy Drive",
     "L": "Activator",
-    "4": "Team Player",
+    "4": "Multitap",
     "0": "MS Joypad",
     "R": "RS232C Serial",
     "T": "Tablet",
@@ -230,6 +282,8 @@ genesis_devices = {
     "C": "CD-ROM",
     "M": "Mega Mouse",
     "G": "Menacer",
+    "A": "Analog joystick",
+    "D": "Download",
 }
 
 gensis_publishers = {
@@ -296,4 +350,17 @@ gensis_publishers = {
     "161":  "Fox Interactive",
     "177":  "Ubisoft",
     "239":  "Disney Interactive",
+}
+
+genesis_modem_supports = {
+    "00": "Japan no mic",
+    "10": "Japan with mic",
+    "20": "Overseas no mic",
+    "30": "Overseas with mic",
+    "40": "Japan no mic, Overseas no mic",
+    "50": "Japan with mic, Overseas with mic",
+    "60": "Japan no mic, Overseas with mic",
+    "70": "Japan with mic, Overseas no mic",
+    "80": "Reserved",
+    "90": "Reserved",
 }

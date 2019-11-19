@@ -18,7 +18,7 @@ class TestGenesisParser(unittest.TestCase):
         self.assertEqual(len(empty), 0)
 
         props = self.genesisParser.parse("data/Sonic the Hedgehog.bin")
-        self.assertEqual(len(props), 15)
+        self.assertEqual(len(props), 16)
         self.assertEqual(props["platform"], "Mega Drive")
         self.assertEqual(props["format"], "")
         self.assertEqual(props["console"], "SEGA MEGA DRIVE")
@@ -30,10 +30,11 @@ class TestGenesisParser(unittest.TestCase):
         self.assertEqual(props["code"], "00001009")
         self.assertEqual(props["version"], "00")
         self.assertEqual(props["checksum"], "264A")
-        self.assertEqual(props["device_codes"], "J")
+        self.assertEqual(props["device_code"], "J")
         self.assertEqual(props["devices"], "3B Joypad")
         self.assertEqual(props["memo"], "")
-        self.assertEqual(props["country_codes"], "JUE")
+        self.assertEqual(props["region_code"], "JUE")
+        self.assertEqual(props["region"], "Asia, America, Europe")
 
 if __name__ == '__main__':
     unittest.main()
