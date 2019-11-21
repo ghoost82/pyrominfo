@@ -179,7 +179,7 @@ class RomInfoParser(object):
             for line in f:
                 m = re.search('FILE .(.*). (.*)$', line)
                 if m:
-                    track_filename = os.path.abspath(os.path.join(
+                    track_filename = os.path.relpath(os.path.join(
                       os.path.dirname(filename),m.group(1)))
                 m = re.search('TRACK (\d+) ([^\s]*)', line)
                 if m:
@@ -225,7 +225,7 @@ class RomInfoParser(object):
                 track = {}
                 track["index"] = int(row[0])
                 track["mode"] = 0 if int(row[2]) == 0 else 1
-                track["filename"] = os.path.abspath(os.path.join(
+                track["filename"] = os.path.relpath(os.path.join(
                     os.path.dirname(filename), row[4]))
                 track["sector_size"] = int(row[3])
                 track["offset"] = int(row[5])
