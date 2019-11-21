@@ -20,6 +20,7 @@ class GensisParser(RomInfoParser):
     * https://www.retrodev.com/segacd.html
     * http://devster.monkeeh.com/sega/32xguide1.txt
     * https://plutiedev.com/rom-header
+    * https://segaretro.org/images/a/a5/Mega-CD_Disc_Format_Specifications.pdf
     """
 
     def getValidExtensions(self):
@@ -80,9 +81,10 @@ class GensisParser(RomInfoParser):
         elif self.isInterleaved(data):
             self.deinterleaveMD(data)
             props["format"] = "Multi Game Doctor interleaved"
-        elif data[0x0 : 0x0 + 8] == b"SEGADISC" or \
+        elif data[0x0 : 0x0 + 14] == b"SEGADISCSYSTEM" or \
              data[0x0 : 0x0 + 12] == b"SEGABOOTDISC" or \
-             data[0x0 : 0x0 + 12] == b"SEGADATADISC":
+             data[0x0 : 0x0 + 12] == b"SEGADATADISC" or \
+             data[0x0 : 0x0 + 8] == b"SEGADISC":
             props["format"] = "Sega CD"
         else:
             props["format"] = ""
@@ -95,7 +97,7 @@ class GensisParser(RomInfoParser):
         props["copyright"] = self._sanitize(data[0x110 : 0x110 + 16])
 
         # Publisher data is extracted from copyright notice
-        props["publisher"] = self.getPublisher(props["copyright"])
+        props["publisher"] = self.getPublisher(props["copyright"][3 : 3 + 4])
 
         # 0120-014f - Domestic name, the name the game has in its country of origin
         props["foreign_title"] = self._sanitize(data[0x120 : 0x120 + 48])
@@ -124,10 +126,10 @@ class GensisParser(RomInfoParser):
         if data[0x1bc : 0x1bc + 2] == b"MO":
             props["modem"] = "yes"
             props["modem_code"] = self._sanitize(data[0x1bc : 0x1bc + 12]) 
-            props["modem_publisher"] = self.getPublisher(props["modem_code"], 2)
-            props["mode_game_number"] = self._sanitize(data[0x1c2 : 0x1c2 + 2])
-            props["mode_version"] = self._sanitize(data[0x1c5 : 0x1c5 + 1])
-            props["mode_region"] = genesis_modem_supports.get(self._sanitize(data[0x1c6 : 0x1c6 + 2]), "")
+            props["modem_publisher"] = self.getPublisher(props["modem_code"][2 : 2 + 4])
+            props["modem_game_number"] = self._sanitize(data[0x1c2 : 0x1c2 + 2])
+            props["modem_version"] = self._sanitize(data[0x1c5 : 0x1c5 + 1])
+            props["modem_region"] = genesis_modem_supports.get(self._sanitize(data[0x1c6 : 0x1c6 + 2]), "")
 
         # 01C8-01EF - Memo
         props["memo"] = self._sanitize(data[0x1c8 : 0x1c8 + 40])
@@ -137,14 +139,28 @@ class GensisParser(RomInfoParser):
         #             http://www.squish.net/generator/manual.html, it may also be a
         #             single hex digit which represents a new-style country code.
         props["region_code"] = self._sanitize(data[0x1f0 : 0x1f0 + 16])
-        props["region"] = ", ".join([sega_regions.get(d) for d in props["region_code"] \
-                                                             if d in sega_regions])
+        props["region"] = ", ".join([genesis_regions.get(d) for d in props["region_code"] \
+                                                             if d in genesis_regions])
         if props["region_code"] != "" and props["region"] == "":
             region = []
-            for r_code, r_desc in list(sega_regions.items()):
+            for r_code, r_desc in list(genesis_regions.items()):
                 if type(r_code) != str and int(props["region_code"], 16) & r_code == r_code:
                     region.append(r_desc)
             props["region"] = ", ".join(region)
+
+        # Parse special Sega CD header
+        # See SEGA's Mega-CD Disc Format Specifications Ver. 2.00, p. 18 for details.
+        if props["format"] == "Sega CD":
+            # 0000-000f Disc identifier
+            props["hardware_id"] = self._sanitize(data[0x00 : 0x00 + 16])
+            # 0010-001b Volume name
+            props["volume_name"] = self._sanitize(data[0x10 : 0x10 + 12])
+            # 001c-001d Volume version - BCD encoded >100 are prereleases
+            props["volume_version"] = "%X.%02X" % (data[0x1c], data[0x1d])
+            # 0020-001b System name 
+            props["system_name"] = self._sanitize(data[0x20 : 0x20 + 12])
+            # 002c-001d System version - BCD encoded >100 are prereleases
+            props["system_version"] = "%X.%02X" % (data[0x2c], data[0x2d])
 
         return props
 
@@ -239,14 +255,14 @@ class GensisParser(RomInfoParser):
 
         return any(data[case[0] : case[0] + len(case[1])] == case[1] for case in edge_cases)
 
-    def getPublisher(self, copyright_str, start=3):
+    def getPublisher(self, copyright_str):
         """
         Resolve a copyright string into a publisher name. It SHOULD be 4
         characters after a (C) symbol, but there are variations. When the
         company uses a number as a company code, the copyright usually has
         this format: '(C)T-XX 1988.JUL', where XX is the company code.
         """
-        company = copyright_str[start : start + 4]
+        company = copyright_str[0:4]
         if "-" in company:
             company = company[company.rindex("-") + 1 : ]
         company = company.rstrip()
@@ -255,7 +271,7 @@ class GensisParser(RomInfoParser):
 RomInfoParser.registerParser(GensisParser())
 
 
-sega_regions = {
+genesis_regions = {
     "J": "Asia",     # Japan, Korea, Asian NTSC
     "U": "America",  # North American NTSC, Brazilian PAL-M, Argentine PAL-N
     "E": "Europe",   # European PAL
@@ -263,7 +279,6 @@ sega_regions = {
     0b0010: "Domestic, PAL",
     0b0100: "Overseas, NTSC (America)",
     0b1000: "Overseas, PAL (Europe)",
-
 }
 
 genesis_devices = {
