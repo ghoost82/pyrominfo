@@ -5,12 +5,12 @@ from .rominfo import RomInfoParser
 
 class GenericDiscParser(RomInfoParser):
     """
-    Parse generic disc image or cuesheets. Valid extensions are iso mdf img bin cue gdi.
+    Parse generic disc image or cuesheets. Valid extensions are iso, mdf, img, bin, cue, cdi, gdi.
     * https://wiki.osdev.org/ISO_9660
     """
 
     def getValidExtensions(self):
-        return ["iso", "mdf", "img", "bin", "cue", "gdi"]
+        return ["iso", "mdf", "img", "bin", "cue", "cdi", "gdi"]
 
     def parse(self, filename):
         props = {}
@@ -19,6 +19,8 @@ class GenericDiscParser(RomInfoParser):
 
         if tracks:
             filename = tracks[0]["filename"]
+        else:
+            return props
 
         with open(filename, "rb") as f:
             # read first 17 sectors of disc image and convert it if neccessary
@@ -43,20 +45,21 @@ class GenericDiscParser(RomInfoParser):
     def parseBuffer(self, data):
         props = {}
         props["platform"] = "Generic Disc"
-        props["pvg_standard_id"] =  self._sanitize(data[0x8001 : 0x8001 + 5])
-        props["pvg_system_id"] =  self._sanitize(data[0x8008 : 0x8008 + 32])
-        props["pvg_volume_id"] =  self._sanitize(data[0x8028 : 0x8028 + 32])
-        props["pvg_volume_set_id"] =  self._sanitize(data[0x80be : 0x80be + 128])
-        props["pvg_publisher_id"] =  self._sanitize(data[0x813e : 0x813e + 128])
-        props["pvg_preparer_id"] =  self._sanitize(data[0x81be : 0x81be + 128])
-        props["pvg_application_id"] =  self._sanitize(data[0x823e : 0x823e + 128])
-        props["pvg_copyright_file_id"] =  self._sanitize(data[0x82be : 0x82be + 37])
-        props["pvg_abstract_file_id"] =  self._sanitize(data[0x82e3 : 0x82e3 + 37])
-        props["pvg_bibliographic_file_id"] =  self._sanitize(data[0x8308 : 0x8308 + 37])
-        props["pvg_creation_date_code"] =  self._sanitize(data[0x832d : 0x832d + 17])
-        props["pvg_modification_date_code"] =  self._sanitize(data[0x833e : 0x833e + 17])
-        props["pvg_expiration_date_code"] =  self._sanitize(data[0x834f : 0x834f + 17])
-        props["pvg_effective_date_code"] =  self._sanitize(data[0x8360 : 0x8360 + 17])
+        props["standard_id"] =  self._sanitize(data[0x8001 : 0x8001 + 5])
+        props["system_id"] =  self._sanitize(data[0x8008 : 0x8008 + 32])
+        props["volume_id"] =  self._sanitize(data[0x8028 : 0x8028 + 32])
+        props["set_info"] =  "%d/%d" % (data[0x807f], data[0x807b])
+        props["volume_set_id"] =  self._sanitize(data[0x80be : 0x80be + 128])
+        props["publisher_id"] =  self._sanitize(data[0x813e : 0x813e + 128])
+        props["data_preparer_id"] =  self._sanitize(data[0x81be : 0x81be + 128])
+        props["application_id"] =  self._sanitize(data[0x823e : 0x823e + 128])
+        props["copyright_file_id"] =  self._sanitize(data[0x82be : 0x82be + 37])
+        props["abstract_file_id"] =  self._sanitize(data[0x82e3 : 0x82e3 + 37])
+        props["bibliographic_file_id"] =  self._sanitize(data[0x8308 : 0x8308 + 37])
+        props["creation_date_code"] =  self._sanitize(data[0x832d : 0x832d + 17])
+        props["modification_date_code"] =  self._sanitize(data[0x833e : 0x833e + 17])
+        props["expiration_date_code"] =  self._sanitize(data[0x834f : 0x834f + 17])
+        props["effective_date_code"] =  self._sanitize(data[0x8360 : 0x8360 + 17])
 
         return props
 
