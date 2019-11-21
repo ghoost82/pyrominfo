@@ -9,14 +9,15 @@ import unittest
 
 mastersystem = testutils.loadModule("mastersystem")
 
-class TestMasterSystemParser(unittest.TestCase):
+class TestMastersystemParser(unittest.TestCase):
     def setUp(self):
         self.mastersystemParser = mastersystem.MasterSystemParser()
 
-    def test_mastersystem(self):
+    def test_invalid(self):
         empty = self.mastersystemParser.parse("data/empty")
         self.assertEqual(len(empty), 0)
 
+    def test_mastersystem(self):
         props = self.mastersystemParser.parse("data/Air Rescue.sms")
         self.assertEqual(len(props), 14)
         self.assertEqual(props["header_id"], "TMR SEGA")
@@ -34,7 +35,7 @@ class TestMasterSystemParser(unittest.TestCase):
         self.assertEqual(props["title"], "")
         self.assertEqual(props["description"], "")
 
-    def test_gameGear(self):
+    def test_gamegear(self):
         props = self.mastersystemParser.parse("data/Tails Adventures.gg")
         self.assertEqual(len(props), 14)
         self.assertEqual(props["header_id"], "TMR SEGA")

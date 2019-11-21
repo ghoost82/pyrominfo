@@ -13,10 +13,11 @@ class TestGBAParser(unittest.TestCase):
     def setUp(self):
         self.gbaParser = gba.GBAParser()
 
-    def test_gba(self):
+    def test_invalid(self):
         empty = self.gbaParser.parse("data/empty")
         self.assertEqual(len(empty), 0)
 
+    def test_gba(self):
         props = self.gbaParser.parse("data/Golden Sun - The Lost Age.gba")
         self.assertEqual(len(props), 8)
         self.assertEqual(props["title"], "GOLDEN_SUN_B")

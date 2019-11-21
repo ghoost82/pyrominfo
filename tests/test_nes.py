@@ -13,10 +13,11 @@ class TestNESParser(unittest.TestCase):
     def setUp(self):
         self.nesParser = nes.NESParser()
 
-    def test_nes(self):
+    def test_invalid(self):
         empty = self.nesParser.parse("data/empty")
         self.assertEqual(len(empty), 0)
 
+    def test_nes(self):
         props = self.nesParser.parse("data/Metroid.nes")
         self.assertEqual(len(props), 16)
         self.assertEqual(props["platform"], "Nintendo Entertainment System")
@@ -36,6 +37,7 @@ class TestNESParser(unittest.TestCase):
         self.assertEqual(props["video_output"], "")
         self.assertEqual(props["rom_size_bytes"], 131072)
 
+    def test_unif(self):
         props = self.nesParser.parse("data/Dancing Blocks (1990)(Sachen)(AS)[p][!][SA-013][NES cart].unf")
         self.assertEqual(len(props), 13)
         self.assertEqual(props["platform"], "Nintendo Entertainment System")
@@ -52,6 +54,7 @@ class TestNESParser(unittest.TestCase):
         self.assertEqual(props["title"], "Dancing Blocks (72 pin cart)")
         self.assertEqual(props["rom_size_bytes"], 40960)
 
+    def test_fds(self):
         props = self.nesParser.parse("data/Akumajou Dracula.fds")
         self.assertEqual(len(props), 12)
         self.assertEqual(props["platform"], "Familiy Computer Disk System")

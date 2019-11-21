@@ -13,10 +13,11 @@ class TestGameboyParser(unittest.TestCase):
     def setUp(self):
         self.gbParser = gameboy.GameboyParser()
 
-    def test_gameboy(self):
+    def test_invalid(self):
         empty = self.gbParser.parse("data/empty")
         self.assertEqual(len(empty), 0)
 
+    def test_gameboy(self):
         props = self.gbParser.parse("data/Tetris.gb")
         self.assertEqual(len(props), 17)
         self.assertEqual(props["title"], "TETRIS")
@@ -37,7 +38,7 @@ class TestGameboyParser(unittest.TestCase):
         self.assertEqual(props["header_checksum"], "0A")
         self.assertEqual(props["global_checksum"], "16BF")
 
-
+    def test_gameboycolor(self):
         props = self.gbParser.parse("data/The Legend of Zelda - Links Awakening DX.gbc")
         self.assertEqual(len(props), 17)
         self.assertEqual(props["title"], "ZELDA")

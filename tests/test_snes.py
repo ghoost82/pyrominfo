@@ -13,10 +13,11 @@ class TestSNESParser(unittest.TestCase):
     def setUp(self):
         self.snesParser = snes.SNESParser()
 
-    def test_snes(self):
+    def test_invalid(self):
         empty = self.snesParser.parse("data/empty")
         self.assertEqual(len(empty), 0)
 
+    def test_snes(self):
         props = self.snesParser.parse("data/Super Mario World.smc")
         self.assertEqual(len(props), 18)
         self.assertEqual(props["platform"], "Super Nintendo Entertainment System")

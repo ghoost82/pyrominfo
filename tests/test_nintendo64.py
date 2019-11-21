@@ -13,10 +13,11 @@ class TestNintendo64Parser(unittest.TestCase):
     def setUp(self):
         self.n64Parser = nintendo64.Nintendo64Parser()
 
-    def test_nintendo64(self):
+    def test_invalid(self):
         empty = self.n64Parser.parse("data/empty")
         self.assertEqual(len(empty), 0)
 
+    def test_nintendo64(self):
         props = self.n64Parser.parse("data/Super Smash Bros.z64")
         self.assertEqual(len(props), 11)
         self.assertEqual(props["platform"], "Nintendo 64")
