@@ -12,8 +12,9 @@ __all__ = [
     "mastersystem",
     "nes",
     "nintendo64",
+    "saturn",
     "snes",
-    "genericdisc",
+    "genericdisc",# this have to be the last entry
 ]
 
 class RomInfo(object):
