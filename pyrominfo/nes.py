@@ -192,7 +192,7 @@ class NESParser(RomInfoParser):
                     props["disk_sides"] = ""
             props["manufactor_code"] = data[0x0f]
             props["manufactor"] = fds_manufactors.get(props["manufactor_code"], "")
-            props["game_name"] = self._sanitize(data[0x10 : 0x10 + 3])
+            props["title"] = self._sanitize(data[0x10 : 0x10 + 3])
             props["game_type"] = self._sanitize(data[0x13 : 0x13 + 1])
             props["revision"] = data[0x14]
             props["disk_type"] = "FMC" if data[0x17] == 0x00 else "FSC" if data[0x17] == 0x01 else ""

@@ -104,7 +104,7 @@ class DreamcastParser(RomInfoParser):
         props["publisher"] = self._sanitize(data[0x70 : 0x70 + 16])
 
         # 0x80 Game Title
-        props["game_title"] = self._sanitize(data[0x80 : 0x80 + 96])
+        props["title"] = self._sanitize(data[0x80 : 0x80 + 96])
 
         return props
 

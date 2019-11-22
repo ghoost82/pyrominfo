@@ -62,7 +62,7 @@ class TestNESParser(unittest.TestCase):
         self.assertEqual(props["disk_sides"], 2)
         self.assertEqual(props["manufactor_code"], 164)
         self.assertEqual(props["manufactor"], "Konami")
-        self.assertEqual(props["game_name"], "AKM")
+        self.assertEqual(props["title"], "AKM")
         self.assertEqual(props["game_type"], "")
         self.assertEqual(props["revision"], 2)
         self.assertEqual(props["disk_type"], "FMC")

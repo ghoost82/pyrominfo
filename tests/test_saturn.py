@@ -32,7 +32,7 @@ class TestSaturnParser(unittest.TestCase):
         self.assertEqual(props["region"], "Europe")
         self.assertEqual(props["device_code"], "J")
         self.assertEqual(props["devices"], "Control Pad")
-        self.assertEqual(props["game_title"], "VF CG COLLECTION")
+        self.assertEqual(props["title"], "VF CG COLLECTION")
         self.assertEqual(props["tracks"], [{'filename': 'data/Virtua Fighter CG Portrait Collection-1.bin', 'mode': 1, 'sector_size': 2352, 'index': 0, 'offset': 0}])
 
 if __name__ == '__main__':

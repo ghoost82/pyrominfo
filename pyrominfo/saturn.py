@@ -81,7 +81,7 @@ class SaturnParser(RomInfoParser):
                                                              if d in saturn_devices])
 
         # 0x60 Game Title
-        props["game_title"] = self._sanitize(data[0x60 : 0x60 + 112])
+        props["title"] = self._sanitize(data[0x60 : 0x60 + 112])
 
         return props
 

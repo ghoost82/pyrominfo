@@ -35,7 +35,7 @@ class TestDreamcastParser(unittest.TestCase):
         self.assertEqual(props["release_date"], "2001-12-24")
         self.assertEqual(props["bootfile"], "1ST_READ.BIN")
         self.assertEqual(props["publisher"], "SEGA ENTERPRISES")
-        self.assertEqual(props["game_title"], "DREAMKEY3")
+        self.assertEqual(props["title"], "DREAMKEY3")
         self.assertEqual(props["tracks"], [{'index': 1, 'mode': 1, 'filename': 'data/Dreamkey-1.bin', 'sector_size': 2352, 'offset': 0}, {'index': 2, 'mode': 0, 'filename': 'data/Dreamkey-2.bin', 'sector_size': 2352, 'offset': 0}, {'index': 3, 'mode': 1, 'filename': 'data/Dreamkey-3.bin', 'sector_size': 2352, 'offset': 0}])
 
     def test_dreamcast_cdi(self):
@@ -56,7 +56,7 @@ class TestDreamcastParser(unittest.TestCase):
         self.assertEqual(props["release_date"], "2001-02-14")
         self.assertEqual(props["bootfile"], "1ST_READ.BIN")
         self.assertEqual(props["publisher"], "SEGA ENTERPRISES")
-        self.assertEqual(props["game_title"], "DAYTONAUSA")
+        self.assertEqual(props["title"], "DAYTONAUSA")
         self.assertEqual(props["tracks"], [{'filename': 'data/Daytona Usa.cdi', 'index': 0, 'mode': 0, 'sector_size': 2352, 'offset': 352800}, {'filename': 'data/Daytona Usa.cdi', 'index': 1, 'mode': 2, 'sector_size': 2336, 'offset': 1408800}])
 
 if __name__ == '__main__':
