@@ -12,6 +12,7 @@ __all__ = [
     "mastersystem",
     "nes",
     "nintendo64",
+    "nintendods",
     "saturn",
     "snes",
     "genericdisc",# this have to be the last entry

@@ -12,6 +12,7 @@ from test_genesis import TestGenesisParser
 from test_mastersystem import TestMastersystemParser
 from test_nes import TestNESParser
 from test_nintendo64 import TestNintendo64Parser
+from test_nintendods import TestNintendoDsParser
 from test_saturn import TestSaturnParser
 from test_snes import TestSNESParser
 
